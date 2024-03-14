@@ -1,0 +1,7 @@
+#line 1 "C:\\Users\\martin\\Documents\\Workspaces\\Arduino\\Scaffold\\.vscode\\arduino.json"
+{
+    "sketch": "Scaffold.ino",
+    "output": "build",
+    "board": "arduino:avr:uno",
+    "port": "COM5"
+}

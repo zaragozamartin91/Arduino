@@ -1,0 +1,7 @@
+#line 1 "C:\\Users\\martin\\Documents\\Workspaces\\UnderstandingHowBreadboardsWork\\.vscode\\arduino.json"
+{
+    "sketch": "UnderstandingHowBreadboardsWork.ino",
+    "output": "build",
+    "board": "arduino:avr:uno",
+    "port": "COM5"
+}

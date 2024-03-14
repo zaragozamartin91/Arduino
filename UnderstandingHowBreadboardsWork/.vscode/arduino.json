@@ -1,0 +1,6 @@
+{
+    "sketch": "UnderstandingHowBreadboardsWork.ino",
+    "output": "build",
+    "board": "arduino:avr:uno",
+    "port": "COM5"
+}
