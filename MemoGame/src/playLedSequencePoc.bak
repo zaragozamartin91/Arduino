@@ -1,0 +1,76 @@
+#include <Arduino.h>
+#include "music_notes.h" // including the library with the frequencies of the note 
+#include "MelodyBuzzer.h"
+#include "ToggleButton.h"
+#include "MemoGameState.h"
+#include "DemoGameState.h"
+#include "GameLed.h"
+
+/* EXAMPLE code based on https://www.hackster.io/brambi001/play-any-song-with-arduino-passive-buzzer-000d52 written by Ilaria Brambilla - 25/09/2022 */
+
+int BUZZER_PIN=PIN2;
+
+int GREEN_BUTTON_PIN=PIN6;
+int RED_BUTTON_PIN=9;
+int BLUE_BUTTON_PIN=12;
+
+int GREEN_LED_PIN = GREEN_BUTTON_PIN;
+int RED_LED_PIN = RED_BUTTON_PIN;
+int BLUE_LED_PIN = BLUE_BUTTON_PIN;
+
+int GREEN_NOTE = NOTE_G4;
+int RED_NOTE = NOTE_E4;
+int BLUE_NOTE = NOTE_C4;
+
+mz::MelodyBuzzer melodyBuzzer(BUZZER_PIN, &tone, &noTone, &millis);
+
+void turnOffLed(uint8_t);
+
+uint8_t ledSequenceIndex = 0;
+uint8_t ledSequence[] = {0, 1, 2, 0, 1, 2};
+uint8_t ledSequenceSize = sizeof(ledSequence) / sizeof(ledSequence[0]);
+void playNote(unsigned int frequency, unsigned long duration) {
+  melodyBuzzer.playAsync(frequency, duration, [](unsigned int, unsigned long, unsigned long, unsigned long) {
+    turnOffLed(ledSequenceIndex);
+    ledSequenceIndex++;
+  });
+};
+
+int readGreenButton() {return digitalRead(GREEN_BUTTON_PIN);}
+int readBlueButton() {return digitalRead(BLUE_BUTTON_PIN);}
+int readRedButton() {return digitalRead(RED_BUTTON_PIN);}
+
+void pinModeOutput(uint8_t pin) {pinMode(pin, OUTPUT);}
+void digitalWriteHigh(uint8_t pin) {digitalWrite(pin, HIGH);}
+void digitalWriteLow(uint8_t pin) {digitalWrite(pin, LOW);}
+
+mz::GameLed greenLed(GREEN_LED_PIN, &pinModeOutput, &digitalWriteHigh, &digitalWriteLow, &playNote, GREEN_NOTE);
+mz::GameLed blueLed(BLUE_LED_PIN, &pinModeOutput, &digitalWriteHigh, &digitalWriteLow, &playNote, BLUE_NOTE);
+mz::GameLed redLed(RED_LED_PIN, &pinModeOutput, &digitalWriteHigh, &digitalWriteLow, &playNote, RED_NOTE);
+mz::GameLed gameLeds[] = {greenLed, blueLed, redLed};
+
+void setup () {
+    pinMode(BUZZER_PIN, OUTPUT);
+
+    greenLed.setup();
+    blueLed.setup();
+    redLed.setup();
+
+    Serial.begin(9600);
+    while(!Serial){};
+}
+
+
+int LOOP_DELAY_TIME = 50;
+
+
+
+void loop() {
+  if (ledSequenceIndex < ledSequenceSize) gameLeds[ledSequenceIndex].turnOn(1000);
+  melodyBuzzer.update();
+  delay(LOOP_DELAY_TIME);
+}
+
+void turnOffLed(uint8_t idx) {
+  if(idx < ledSequenceSize) gameLeds[idx].turnOff(); 
+};
