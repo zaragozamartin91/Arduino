@@ -1,12 +1,12 @@
 #ifndef MYMACROS_H
 #define MYMACROS_H
 
-#define DEBUG 1
+#define MZ_DEBUG 1
 
-#if DEBUG == 1
-#define debug(x,y) Serial.print(x);Serial.println(y)
+#if MZ_DEBUG == 1
+#define debugPrint(x,y) Serial.print(x);Serial.println(y)
 #else
-#define debug(x,y)
+#define debugPrint(x,y)
 #endif
 
 #endif

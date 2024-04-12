@@ -17,7 +17,7 @@ namespace mz {
         uint8_t* ledSequence, // array of game leds to play
         uint8_t ledSequenceSize, // size of led sequence array
         uint16_t* ledSequenceNoteDurations // durations of each note in milliseconds
-    );
+    ); 
 
     /* Runs setup on led sequence items */
     void setupLedSequence();
