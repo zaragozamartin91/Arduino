@@ -13,8 +13,6 @@ mz::StackArray<3, uint16_t> sa(foo);
 mz::StackArray<3, uint16_t> ba(static_cast<uint16_t>(1),static_cast<uint16_t>(2));
 
 
-
-
 uint8_t BUZZER_PIN=PIN2;
 
 uint8_t GREEN_BUTTON_PIN=PIN6;
@@ -79,3 +77,45 @@ void loop() {
   melodyBuzzer.update();
   delay(LOOP_DELAY_TIME);
 }
+
+
+
+// #include <Arduino.h>
+// #include "ToggleButton.h"
+
+// int READ_PIN=PIN6;
+// int LED_PIN=9;
+
+// int LED_POWER_LEVELS[] = {0, 1, 2, 4, 8, 16, 32, 64, 128, 255};
+// int LED_POWER_LEVELS_L = sizeof(LED_POWER_LEVELS) / sizeof(LED_POWER_LEVELS[0]);
+
+// int v_ledPowerLevel = 0;
+
+// /* Declaring Toggle button */
+// void dimLed(int pressCount) {
+//   int powerLevelIndex = pressCount % LED_POWER_LEVELS_L;
+//   v_ledPowerLevel = LED_POWER_LEVELS[powerLevelIndex];
+// }
+// int readButtonSignal(int pin) {return digitalRead(pin);}
+// mz::ToggleButton v_toggle(READ_PIN, &readButtonSignal, &dimLed);
+
+// int v_pressCount = 0;
+
+// void setup() {
+//   pinMode(READ_PIN, INPUT);
+//   pinMode(LED_PIN, OUTPUT);
+
+//   Serial.begin(9600);
+//   while(!Serial){};
+// }
+
+// void loop() {
+//   v_toggle.update();
+
+//   v_pressCount = v_toggle.getPressCount();
+//   Serial.print("v_pressCount: ");Serial.print(v_pressCount);Serial.print(" ; v_ledPowerLevel: ");Serial.println(v_ledPowerLevel);
+
+//   analogWrite(LED_PIN, v_ledPowerLevel);
+
+//   delay(100);
+// }

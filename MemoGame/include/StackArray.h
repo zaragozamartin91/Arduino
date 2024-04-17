@@ -13,7 +13,7 @@ namespace mz {
             StackArray(Args... args) : items{args...} {}
 
             StackArray(TYPE items[SIZE]) {
-                for (size_t i = 0; i < SIZE; i++) {
+                for (int i = 0; i < SIZE; i++) {
                     this->items[i] = items[i];
                 }
             }
