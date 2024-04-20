@@ -1,5 +1,4 @@
 #include "GameLed.h"
-#include <Arduino.h>
 
 unsigned long mz::GameLed::VERY_LONG_DELAY = 3600000;
 int mz::GameLed::DEFAULT_NOTE = -1;

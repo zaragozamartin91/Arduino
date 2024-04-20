@@ -6,7 +6,9 @@
 /* Led sequence global state */
 
 uint8_t _pls_ledSequenceIndex; // keeps track of current led sequence item to play
-bool _pls_setupDone; // indicates if setup has been executed
+bool _pls_ledSequenceInitialized = false; // indicates if led sequence has been initialized
+bool _pls_ledSequenceRunning; // indicates if led sequence is running
+bool _pls_ledSequenceSetup; // indicates if setup has been executed
 bool _pls_ledSequenceDestroyed; // indicates if led sequence memory has been released
 
 mz::MelodyBuzzer* _pls_melodyBuzzer; // main buzzer
@@ -38,7 +40,8 @@ void mz::initializeLedSequence(
     uint16_t* ledSequenceNoteDurations // durations of each note in milliseconds
 ) {
     _pls_ledSequenceIndex = 0; // reset sequence index on setup
-    _pls_setupDone = false; // reset setup flag
+    _pls_ledSequenceRunning = false; // reset running flag
+    _pls_ledSequenceSetup = false; // reset setup flag
     _pls_ledSequenceDestroyed = false; // reset led sequence destroyed flag
     
     _pls_melodyBuzzer = melodyBuzzer;
@@ -57,15 +60,16 @@ void mz::initializeLedSequence(
         mz::GameLed gl(pin, &_pls_pinModeOutput, &_pls_digitalWriteHigh, &_pls_digitalWriteLow, &_pls_playNote, note);
         _pls_gameLeds[i] = gl; // invokes copy constructor
     }
+
+    _pls_ledSequenceInitialized = true;
 }
 
 void mz::setupLedSequence() {
-    if(_pls_setupDone) { return; } // nothing to do here...
+    if(_pls_ledSequenceSetup) { return; } // nothing to do here...
 
     for (size_t i = 0; i < _pls_ledPinsSize; i++) _pls_gameLeds[i].setup();
-    _pls_setupDone = true;
+    _pls_ledSequenceSetup = true;
 }
-
 
 bool mz::ledSequenceDone() {
     return _pls_ledSequenceIndex >= _pls_ledSequenceSize;
@@ -97,10 +101,20 @@ void mz::updateLedSequence() {
     /* Pass durations as parameters */
     uint16_t duration = _pls_currentSequenceDuration();
     _pls_currentGameLed()->turnOn(duration);
+    _pls_ledSequenceRunning = true; // indicate that led sequence is running
 }
 
 uint8_t mz::getLedSequenceIndex() {
     return _pls_ledSequenceIndex;
+}
+
+mz::LedSequenceState mz::parseLedSequenceState() {
+    if(_pls_ledSequenceDestroyed)   /* ===> */ return DESTROYED;
+    if(mz::ledSequenceDone())       /* ===> */ return FINISHED;
+    if(_pls_ledSequenceRunning)     /* ===> */ return RUNNING;
+    if(_pls_ledSequenceSetup)       /* ===> */ return READY;
+    if(_pls_ledSequenceInitialized) /* ===> */ return INITIALIZED;
+    /* OTHERWISE                       ===> */ return FRESH;
 }
 
 void _pls_playNoteCallback(unsigned int, unsigned long, unsigned long, unsigned long) {
@@ -109,6 +123,6 @@ void _pls_playNoteCallback(unsigned int, unsigned long, unsigned long, unsigned 
 }
 
 void _pls_playNote(unsigned int frequency, unsigned long duration) {
-  _pls_melodyBuzzer->playAsync(frequency, duration, &_pls_playNoteCallback);
+    _pls_melodyBuzzer->playAsync(frequency, duration, &_pls_playNoteCallback);
 };
 

@@ -17,9 +17,9 @@ mz::StackArray<3, uint16_t> ba(static_cast<uint16_t>(1),static_cast<uint16_t>(2)
 
 uint8_t BUZZER_PIN=PIN2;
 
-uint8_t GREEN_BUTTON_PIN=PIN6;
-uint8_t RED_BUTTON_PIN=9;
-uint8_t BLUE_BUTTON_PIN=12;
+uint8_t GREEN_BUTTON_PIN=PIN4;
+uint8_t RED_BUTTON_PIN=PIN5;
+uint8_t BLUE_BUTTON_PIN=PIN6;
 
 uint8_t GREEN_LED_PIN = GREEN_BUTTON_PIN;
 uint8_t RED_LED_PIN = RED_BUTTON_PIN;
@@ -66,14 +66,24 @@ void setup () {
 int LOOP_DELAY_TIME = 100;
 
 void loop() {
+  auto ledSequenceState = mz::parseLedSequenceState();
 
-  if (mz::ledSequenceDone()) {
-    debugPrint("Destroying led sequence",".");
-    mz::destroyLedSequence();
-    debugPrint("Led sequence destroyed",".");
-  } else {
-    debugPrint("Led sequence index: ", mz::getLedSequenceIndex());
-    mz::updateLedSequence();
+  switch (ledSequenceState) {
+    case mz::LedSequenceState::RUNNING:
+    case mz::LedSequenceState::READY:
+      debugPrint("Led sequence index: ", mz::getLedSequenceIndex());
+      mz::updateLedSequence();
+      break;
+
+    case mz::LedSequenceState::FINISHED:
+      debugPrint("Destroying led sequence",".");
+      mz::destroyLedSequence();
+      debugPrint("Led sequence destroyed",".");
+      break;      
+    
+    default:
+      // do nothing...
+      break;
   }
 
   melodyBuzzer.update();
