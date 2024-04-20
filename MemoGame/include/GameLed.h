@@ -1,7 +1,7 @@
 #ifndef GAMELED_H
 #define GAMELED_H
 
-#include "MelodyBuzzer.h"
+#include <stdint.h>
 
 namespace mz {
 
