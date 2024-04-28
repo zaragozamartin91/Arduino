@@ -5,27 +5,28 @@
 
 /* Led sequence global state */
 
-uint8_t _pls_ledSequenceIndex; // keeps track of current led sequence item to play
-bool _pls_ledSequenceInitialized = false; // indicates if led sequence has been initialized
-bool _pls_ledSequenceRunning; // indicates if led sequence is running
-bool _pls_ledSequenceSetup; // indicates if setup has been executed
-bool _pls_ledSequenceDestroyed; // indicates if led sequence memory has been released
+/* Static keyword makes these variables accessible only from this file 
+https://youtu.be/f3FVU-iwNuA?si=tX4NYct9GU-qG1jB */
+static uint8_t _pls_ledSequenceIndex; // keeps track of current led sequence item to play
+static bool _pls_ledSequenceInitialized = false; // indicates if led sequence has been initialized
+static bool _pls_ledSequenceRunning; // indicates if led sequence is running
+static bool _pls_ledSequenceSetup; // indicates if setup has been executed
+static bool _pls_ledSequenceDestroyed; // indicates if led sequence memory has been released
 
-mz::MelodyBuzzer* _pls_melodyBuzzer; // main buzzer
-uint8_t* _pls_ledPins; // led pins array
-uint8_t _pls_ledPinsSize; // size of led pins array
-int* _pls_ledNotes; // notes for each led ; size must match ledPinsSize
-uint8_t* _pls_ledSequence; // array of game leds to play
-uint8_t _pls_ledSequenceSize; // size of led sequence array
-uint16_t* _pls_ledSequenceNoteDurations; // durations of each note in milliseconds
+static mz::MelodyBuzzer* _pls_melodyBuzzer; // main buzzer
+static uint8_t* _pls_ledPins; // led pins array
+static uint8_t _pls_ledPinsSize; // size of led pins array
+static int* _pls_ledNotes; // notes for each led ; size must match ledPinsSize
+static uint8_t* _pls_ledSequence; // array of game leds to play
+static uint8_t _pls_ledSequenceSize; // size of led sequence array
+static uint16_t* _pls_ledSequenceNoteDurations; // durations of each note in milliseconds
+
+static mz::GameLed* _pls_gameLeds; // game leds
 
 
-mz::GameLed* _pls_gameLeds; // game leds
-
-
-void _pls_pinModeOutput(uint8_t pin) {pinMode(pin, OUTPUT);}
-void _pls_digitalWriteHigh(uint8_t pin) {digitalWrite(pin, HIGH);}
-void _pls_digitalWriteLow(uint8_t pin) {digitalWrite(pin, LOW);}
+static void _pls_pinModeOutput(uint8_t pin) {pinMode(pin, OUTPUT);}
+static void _pls_digitalWriteHigh(uint8_t pin) {digitalWrite(pin, HIGH);}
+static void _pls_digitalWriteLow(uint8_t pin) {digitalWrite(pin, LOW);}
 
 /* Plays note and moves sequence pointer forward */
 void _pls_playNote(unsigned int frequency, unsigned long duration);

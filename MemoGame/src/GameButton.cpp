@@ -14,6 +14,8 @@ mz::GameButton::GameButton(
     this->toggleButton = tb; // copy constructor invoked
 }
 
+mz::GameButton::GameButton() : pin{255}, setupFunction{nullptr}, setupDone{false} {}
+
 void mz::GameButton::setup() {
     if(this->setupDone) {return;} // nothing to do here
     

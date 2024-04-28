@@ -20,6 +20,8 @@ namespace mz {
                 void(*toggleCallback)(int)  // function to invoke on toggle
             );
 
+            GameButton(); // default constructor used for array initialization
+
             void setup();
 
             void update();
