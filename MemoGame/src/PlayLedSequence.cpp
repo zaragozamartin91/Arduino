@@ -110,12 +110,13 @@ uint8_t mz::getLedSequenceIndex() {
 }
 
 mz::LedSequenceState mz::parseLedSequenceState() {
-    if(_pls_ledSequenceDestroyed)   /* ===> */ return DESTROYED;
-    if(mz::ledSequenceDone())       /* ===> */ return FINISHED;
-    if(_pls_ledSequenceRunning)     /* ===> */ return RUNNING;
-    if(_pls_ledSequenceSetup)       /* ===> */ return READY;
-    if(_pls_ledSequenceInitialized) /* ===> */ return INITIALIZED;
-    /* OTHERWISE                       ===> */ return FRESH;
+    if(!_pls_ledSequenceInitialized)    /* ===> */ return FRESH;
+    if(_pls_ledSequenceDestroyed)       /* ===> */ return DESTROYED;
+    if(mz::ledSequenceDone())           /* ===> */ return FINISHED;
+    if(_pls_ledSequenceRunning)         /* ===> */ return RUNNING;
+    if(_pls_ledSequenceSetup)           /* ===> */ return READY;
+    if(_pls_ledSequenceInitialized)     /* ===> */ return INITIALIZED;
+    /* OTHERWISE                           ===> */ return UNKNOWN;
 }
 
 void _pls_playNoteCallback(unsigned int, unsigned long, unsigned long, unsigned long) {

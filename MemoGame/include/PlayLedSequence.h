@@ -5,12 +5,13 @@
 
 namespace mz {
     enum LedSequenceState {
-        FRESH, // sequence has just been created
-        INITIALIZED, // sequence was initialized with proper data
-        READY, // sequence has been set up and is ready to run
-        RUNNING, // sequence is running
-        FINISHED, // sequence has ended playing all notes
-        DESTROYED // sequence was destroyed
+        FRESH,          // sequence has just been created
+        INITIALIZED,    // sequence was initialized with proper data
+        READY,          // sequence has been set up and is ready to run
+        RUNNING,        // sequence is running
+        FINISHED,       // sequence has ended playing all notes
+        DESTROYED,      // sequence was destroyed
+        UNKNOWN         // unknown or unexpected state
     };
 
     /* Initializes variables and memory for playing led sequence */

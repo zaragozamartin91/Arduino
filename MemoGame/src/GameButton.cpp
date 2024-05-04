@@ -16,6 +16,13 @@ mz::GameButton::GameButton(
 
 mz::GameButton::GameButton() : pin{255}, setupFunction{nullptr}, setupDone{false} {}
 
+mz::GameButton::GameButton(GameButton &other) {
+    pin = other.pin;
+    setupFunction = other.setupFunction; // setup function
+    toggleButton = other.toggleButton;
+    setupDone = other.setupDone; // indicates if setup has been executed
+}
+
 void mz::GameButton::setup() {
     if(this->setupDone) {return;} // nothing to do here
     

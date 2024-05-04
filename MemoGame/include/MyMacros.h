@@ -9,4 +9,7 @@
 #define debugPrint(x,y)
 #endif
 
+// Max number of buttons and leds currently supported
+#define MAX_BUTTONS_AND_LEDS 3
+
 #endif

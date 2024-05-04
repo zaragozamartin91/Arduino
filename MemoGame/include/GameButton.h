@@ -22,6 +22,8 @@ namespace mz {
 
             GameButton(); // default constructor used for array initialization
 
+            GameButton(GameButton& other);
+
             void setup();
 
             void update();
