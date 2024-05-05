@@ -38,7 +38,6 @@ uint8_t ledSequenceSize = _INITIAL_LED_SEQUENCE_SIZE; // initial led sequence si
 uint16_t ledSequenceDurations[_FULL_LED_SEQUENCE_SIZE];
 
 
-bool playingWrongInputMelody = false;
 mz::PlayWrongInputMelody playWrongInputMelody(&melodyBuzzer, LED_PINS, LED_PINS_SIZE);
 
 
@@ -95,6 +94,10 @@ void _restartGameLedSequence() {
   _initializeGameLedSequence(); // re-create led sequence
 }
 
+
+#define _COMPLETE_SEQUENCE_DELAY 1000
+#define _FAILED_SEQUENCE_DELAY 500
+#define _RESTART_GAME_DELAY 1000
 void _loopGameButtonSequence() {
   auto buttonSequenceState = mz::parseButtonSequenceState();
 
@@ -118,7 +121,7 @@ void _loopGameButtonSequence() {
       debugPrint("Button sequence complete", "!");
       mz::destroyButtonSequence();
       debugPrint("Button sequence destroyed", ".");
-      delay(1000); // artificial delay of 1s
+      delay(_COMPLETE_SEQUENCE_DELAY); // artificial delay of 1s
       ledSequenceSize++; // incrementing led sequence size
       _initializeGameLedSequence(); // re-create led sequence
       break;
@@ -127,9 +130,14 @@ void _loopGameButtonSequence() {
       debugPrint("Button sequence FAILED", "!");
       mz::destroyButtonSequence();
       debugPrint("Button sequence destroyed", ".");
-      delay(1000); // artificial delay of 1s
-      
-      _restartGameLedSequence();
+      delay(_FAILED_SEQUENCE_DELAY); 
+      playWrongInputMelody.initialize();
+      playWrongInputMelody.setup();
+      playWrongInputMelody.play([](){
+        // on end execute =>
+        delay(_RESTART_GAME_DELAY);
+        _restartGameLedSequence();
+      });
       break;
 
     case mz::ButtonSequenceState::B_DESTROYED:
@@ -181,7 +189,7 @@ void _loopGameLedSequence() {
 
 #define _LOOP_DELAY_TIME 50
 void loop() {
-  if (playingWrongInputMelody) {
+  if (playWrongInputMelody.melodyPlaying()) {
     playWrongInputMelody.update();
   } else {
     _loopGameLedSequence();

@@ -31,7 +31,8 @@ mz::PlayWrongInputMelody::PlayWrongInputMelody(
 melodyBuzzer{melodyBuzzer},
 ledPinsSize{ledPinsSize},
 sequenceEndCallback{sequenceEndCallback},
-sequenceEnded{false} {
+playing{false},
+ended{false} {
 
     // led sequence populated like 0-1-2-3-4-5-6-7-8-...
     ledSequence = new uint8_t[_PWIM_LED_NOTES_SIZE];
@@ -42,11 +43,7 @@ sequenceEnded{false} {
     for (uint8_t i = 0 ; i < _PWIM_LED_NOTES_SIZE ; i++) this->ledPins[i] = ledPinsParam[i % ledPinsSize];
 }
 
-void mz::PlayWrongInputMelody::initialize(void(*sequenceEndCallback)()) {
-    if (sequenceEndCallback != nullptr) {
-        this->sequenceEndCallback = sequenceEndCallback;
-    }
-
+void mz::PlayWrongInputMelody::initialize() {
     initializeLedSequence(
         melodyBuzzer,
         ledPins,
@@ -56,13 +53,20 @@ void mz::PlayWrongInputMelody::initialize(void(*sequenceEndCallback)()) {
         _PWIM_LED_NOTES_SIZE,
         _PWIM_DURATIONS
     );
-    
-    sequenceEnded = false;
+
+    playing = false;
+    ended = false;
 }
 
 void mz::PlayWrongInputMelody::setup() {
     setupLedSequence();
-    sequenceEnded = false;
+    playing = false;
+    ended = false;
+}
+
+void mz::PlayWrongInputMelody::play(void (*sequenceEndCallback)()) {
+    this->sequenceEndCallback = sequenceEndCallback;
+    playing = true;
 }
 
 void mz::PlayWrongInputMelody::update() {
@@ -75,8 +79,8 @@ void mz::PlayWrongInputMelody::update() {
             break;
 
         case mz::LedSequenceState::FINISHED:
-            if(sequenceEndCallback != nullptr && !sequenceEnded) sequenceEndCallback();
-            sequenceEnded = true;
+            if(sequenceEndCallback != nullptr && !ended) sequenceEndCallback();
+            ended = true;
             break;
         
         default:
@@ -87,6 +91,10 @@ void mz::PlayWrongInputMelody::update() {
 
 void mz::PlayWrongInputMelody::destroy() {
     destroyLedSequence();
+}
+
+bool mz::PlayWrongInputMelody::melodyPlaying() {
+    return this->playing && !this->ended;
 }
 
 mz::PlayWrongInputMelody::~PlayWrongInputMelody() {

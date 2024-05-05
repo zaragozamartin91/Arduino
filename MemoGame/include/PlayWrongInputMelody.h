@@ -12,7 +12,8 @@ namespace mz {
             uint8_t* ledSequence; // array of game leds to play
             void(*sequenceEndCallback)(); // callback to invoke on sequence end
 
-            bool sequenceEnded;
+            bool playing; // melody playing
+            bool ended; // melody ended
 
         public:
             PlayWrongInputMelody(
@@ -22,13 +23,17 @@ namespace mz {
                 void(*sequenceEndCallback)() = nullptr
             );
 
-            void initialize(void(*sequenceEndCallback)() = nullptr);
+            void initialize();
 
             void setup();
+
+            void play(void(*sequenceEndCallback)() = nullptr);
 
             void update();
 
             void destroy();
+
+            bool melodyPlaying();
 
             ~PlayWrongInputMelody();
         };
