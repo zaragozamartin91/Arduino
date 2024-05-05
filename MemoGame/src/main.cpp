@@ -8,6 +8,7 @@
 #include "MyMacros.h"
 #include "GameButton.h"
 #include "PunchButtonSequence.h"
+// #include "PlayWrongInputMelody.h"
 
 
 uint8_t BUZZER_PIN=PIN2;
@@ -21,31 +22,28 @@ uint8_t RED_LED_PIN = RED_BUTTON_PIN;
 uint8_t BLUE_LED_PIN = BLUE_BUTTON_PIN;
 
 
-int LED_NOTES[] = {
-  NOTE_C4,
-  NOTE_AS4,
-  NOTE_GS4
-}; // 3 notes
-
-uint8_t LED_PINS[] = {
-  GREEN_LED_PIN,
-  RED_LED_PIN,
-  BLUE_LED_PIN
-}; // 3 "pins"
-
+int LED_NOTES[] = { NOTE_C4, NOTE_AS4, NOTE_GS4 }; // 3 notes
+uint8_t LED_PINS[] = { GREEN_LED_PIN, RED_LED_PIN, BLUE_LED_PIN}; // 3 "pins"
 uint8_t LED_PINS_SIZE = sizeof(LED_PINS) / sizeof(LED_PINS[0]);
 
 mz::MelodyBuzzer melodyBuzzer(BUZZER_PIN, &tone, &noTone, &millis);
 
-uint8_t ledSequence[] = {0, 1, 2, 0};
-uint8_t ledSequenceSize = sizeof(ledSequence) / sizeof(ledSequence[0]);
-uint16_t ledSequenceDurations[] = {
-  500,
-  500,
-  500,
-  500
-}; // 3 durations
+#define _FULL_LED_SEQUENCE_SIZE 100
+uint8_t FULL_LED_SEQUENCE[_FULL_LED_SEQUENCE_SIZE];
+uint8_t* ledSequence = FULL_LED_SEQUENCE;
 
+#define _INITIAL_LED_SEQUENCE_SIZE 4
+#define _INITIAL_LED_SEQUENCE_DURATION 500
+uint8_t ledSequenceSize = _INITIAL_LED_SEQUENCE_SIZE; // initial led sequence size is 4
+uint16_t ledSequenceDurations[_FULL_LED_SEQUENCE_SIZE];
+
+
+void _randomizeLedSequence() {
+  for (int i = 0 , r = rand() ; i < _FULL_LED_SEQUENCE_SIZE ; i++ , r = rand()) {
+      FULL_LED_SEQUENCE[i] = r % LED_PINS_SIZE;
+      ledSequenceDurations[i] = _INITIAL_LED_SEQUENCE_DURATION;
+  }
+}
 
 void setup () {
     pinMode(BUZZER_PIN, OUTPUT);
@@ -53,19 +51,34 @@ void setup () {
     Serial.begin(9600);
     while(!Serial){};
 
+    _randomizeLedSequence();
+
     debugPrint("ledSequenceSize: ", ledSequenceSize);
 }
 
 
-int LOOP_DELAY_TIME = 100;
+int LOOP_DELAY_TIME = 50;
+
+void _initializeLedSequence() {
+  debugPrint("Initializing led sequence", ".");
+  mz::initializeLedSequence(
+    &melodyBuzzer, LED_PINS, LED_PINS_SIZE, LED_NOTES, ledSequence, ledSequenceSize, ledSequenceDurations
+  );
+}
+
+#define _BTN_SEQUENCE_DURATIONS 250
+void _initializeButtonSequence() {
+  debugPrint("Initializing button sequence", ".");
+  mz::initializeButtonSequence(&melodyBuzzer, LED_PINS, LED_PINS_SIZE, LED_NOTES, ledSequence, ledSequenceSize, _BTN_SEQUENCE_DURATIONS);
+}
+
 
 void _loopButtonSequence() {
   auto buttonSequenceState = mz::parseButtonSequenceState();
 
   switch (buttonSequenceState) {
     case mz::ButtonSequenceState::B_FRESH:
-      debugPrint("Initializing button sequence", ".");
-      mz::initializeButtonSequence(&melodyBuzzer, LED_PINS, LED_PINS_SIZE, LED_NOTES, ledSequence, ledSequenceSize, 250);
+      _initializeButtonSequence();
       break;
 
     case mz::ButtonSequenceState::B_INITIALIZED:
@@ -83,14 +96,25 @@ void _loopButtonSequence() {
       debugPrint("Button sequence complete", "!");
       mz::destroyButtonSequence();
       debugPrint("Button sequence destroyed", ".");
+      delay(1000); // artificial delay of 1s
+      ledSequenceSize++; // incrementing led sequence size
+      _initializeLedSequence(); // re-create led sequence
       break;
 
     case mz::ButtonSequenceState::B_FAILED:
       debugPrint("Button sequence FAILED", "!");
       mz::destroyButtonSequence();
       debugPrint("Button sequence destroyed", ".");
+      delay(1000); // artificial delay of 1s
+      _randomizeLedSequence(); // regenerate led sequence
+      ledSequenceSize = _INITIAL_LED_SEQUENCE_SIZE; // reset game
+      _initializeLedSequence(); // re-create led sequence
       break;
 
+    case mz::ButtonSequenceState::B_DESTROYED:
+      // 2nd round of button sequence input
+      _initializeButtonSequence();
+      break;
 
     default:
       // do nothing...
@@ -98,15 +122,13 @@ void _loopButtonSequence() {
   }
 }
 
+
 void loop() {
   auto ledSequenceState = mz::parseLedSequenceState();
 
   switch (ledSequenceState) {
     case mz::LedSequenceState::FRESH:
-      debugPrint("Initializing led sequence", ".");
-      mz::initializeLedSequence(
-        &melodyBuzzer, LED_PINS, LED_PINS_SIZE, LED_NOTES, ledSequence, ledSequenceSize, ledSequenceDurations
-      );
+      _initializeLedSequence();
       break;
 
     case mz::LedSequenceState::INITIALIZED:
@@ -116,7 +138,7 @@ void loop() {
 
     case mz::LedSequenceState::READY:
     case mz::LedSequenceState::RUNNING:
-      debugPrint("Led sequence index: ", mz::getLedSequenceIndex());
+      // debugPrint("Led sequence index: ", mz::getLedSequenceIndex());
       mz::updateLedSequence();
       break;
 

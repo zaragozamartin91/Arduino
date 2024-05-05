@@ -23,6 +23,7 @@ static uint16_t* _pls_ledSequenceNoteDurations; // durations of each note in mil
 
 static mz::GameLed* _pls_gameLeds; // game leds
 
+static bool _pls_playingNote = false; 
 
 static void _pls_pinModeOutput(uint8_t pin) {pinMode(pin, OUTPUT);}
 static void _pls_digitalWriteHigh(uint8_t pin) {digitalWrite(pin, HIGH);}
@@ -122,9 +123,17 @@ mz::LedSequenceState mz::parseLedSequenceState() {
 void _pls_playNoteCallback(unsigned int, unsigned long, unsigned long, unsigned long) {
     _pls_currentGameLed()->turnOff();
     _pls_ledSequenceIndex++;
+    _pls_playingNote = false;
 }
 
 void _pls_playNote(unsigned int frequency, unsigned long duration) {
+    if (_pls_playingNote) return; // nothing to do here
+    _pls_playingNote = true;
+
+    debugPrint("Playing note",".");
+    debugPrint("_pls_ledSequenceIndex: ", _pls_ledSequenceIndex);
+    debugPrint("frequency: ", frequency);
+    debugPrint("Duration: ", duration);
     _pls_melodyBuzzer->playAsync(frequency, duration, &_pls_playNoteCallback);
 };
 

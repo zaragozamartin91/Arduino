@@ -18,7 +18,9 @@ static int _PWIM_LED_NOTES[] = {
 
 static const int _PWIM_LED_NOTES_SIZE = sizeof(_PWIM_LED_NOTES) / sizeof(_PWIM_LED_NOTES[0]);
 
-static uint16_t _PWIM_DURATIONS[] = { 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 }; // all durations are of 100ms 
+#define _PWIM_DUR 100
+static uint16_t _PWIM_DURATIONS[] = { _PWIM_DUR, _PWIM_DUR, _PWIM_DUR, _PWIM_DUR, _PWIM_DUR, _PWIM_DUR, _PWIM_DUR, _PWIM_DUR, _PWIM_DUR, _PWIM_DUR }; 
+// all durations are of 100ms 
 
 mz::PlayWrongInputMelody::PlayWrongInputMelody(
     mz::MelodyBuzzer *melodyBuzzer,
