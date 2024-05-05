@@ -8,9 +8,9 @@
 #include "MyMacros.h"
 #include "GameButton.h"
 #include "PunchButtonSequence.h"
-// #include "PlayWrongInputMelody.h"
+#include "PlayWrongInputMelody.h"
 
-
+uint8_t PHOTO_SEED_PIN=A1; // PIN OF THE PHOTO RESISTOR FEEDER
 uint8_t BUZZER_PIN=PIN2;
 
 uint8_t GREEN_BUTTON_PIN=PIN4;
@@ -38,6 +38,21 @@ uint8_t ledSequenceSize = _INITIAL_LED_SEQUENCE_SIZE; // initial led sequence si
 uint16_t ledSequenceDurations[_FULL_LED_SEQUENCE_SIZE];
 
 
+bool playingWrongInputMelody = false;
+mz::PlayWrongInputMelody playWrongInputMelody(&melodyBuzzer, LED_PINS, LED_PINS_SIZE);
+
+
+void _seedRandomizer() {
+    float photoRead = analogRead(PHOTO_SEED_PIN);
+    debugPrint("photoRead: ", photoRead);
+    float photoRead100 = photoRead * 100.;
+    debugPrint("photoRead100: ", photoRead100);
+
+    unsigned int seed = static_cast<int>(photoRead100);
+    debugPrint("Using seed: ", seed);
+    srand(seed);
+}
+
 void _randomizeLedSequence() {
   for (int i = 0 , r = rand() ; i < _FULL_LED_SEQUENCE_SIZE ; i++ , r = rand()) {
       FULL_LED_SEQUENCE[i] = r % LED_PINS_SIZE;
@@ -47,19 +62,20 @@ void _randomizeLedSequence() {
 
 void setup () {
     pinMode(BUZZER_PIN, OUTPUT);
+    pinMode(PHOTO_SEED_PIN, INPUT);
 
     Serial.begin(9600);
     while(!Serial){};
 
+    _seedRandomizer();
     _randomizeLedSequence();
 
     debugPrint("ledSequenceSize: ", ledSequenceSize);
 }
 
 
-int LOOP_DELAY_TIME = 50;
 
-void _initializeLedSequence() {
+void _initializeGameLedSequence() {
   debugPrint("Initializing led sequence", ".");
   mz::initializeLedSequence(
     &melodyBuzzer, LED_PINS, LED_PINS_SIZE, LED_NOTES, ledSequence, ledSequenceSize, ledSequenceDurations
@@ -67,18 +83,24 @@ void _initializeLedSequence() {
 }
 
 #define _BTN_SEQUENCE_DURATIONS 250
-void _initializeButtonSequence() {
+void _initializeGameButtonSequence() {
   debugPrint("Initializing button sequence", ".");
   mz::initializeButtonSequence(&melodyBuzzer, LED_PINS, LED_PINS_SIZE, LED_NOTES, ledSequence, ledSequenceSize, _BTN_SEQUENCE_DURATIONS);
 }
 
 
-void _loopButtonSequence() {
+void _restartGameLedSequence() {
+  _randomizeLedSequence(); // regenerate led sequence
+  ledSequenceSize = _INITIAL_LED_SEQUENCE_SIZE; // reset game
+  _initializeGameLedSequence(); // re-create led sequence
+}
+
+void _loopGameButtonSequence() {
   auto buttonSequenceState = mz::parseButtonSequenceState();
 
   switch (buttonSequenceState) {
     case mz::ButtonSequenceState::B_FRESH:
-      _initializeButtonSequence();
+      _initializeGameButtonSequence();
       break;
 
     case mz::ButtonSequenceState::B_INITIALIZED:
@@ -98,7 +120,7 @@ void _loopButtonSequence() {
       debugPrint("Button sequence destroyed", ".");
       delay(1000); // artificial delay of 1s
       ledSequenceSize++; // incrementing led sequence size
-      _initializeLedSequence(); // re-create led sequence
+      _initializeGameLedSequence(); // re-create led sequence
       break;
 
     case mz::ButtonSequenceState::B_FAILED:
@@ -106,14 +128,13 @@ void _loopButtonSequence() {
       mz::destroyButtonSequence();
       debugPrint("Button sequence destroyed", ".");
       delay(1000); // artificial delay of 1s
-      _randomizeLedSequence(); // regenerate led sequence
-      ledSequenceSize = _INITIAL_LED_SEQUENCE_SIZE; // reset game
-      _initializeLedSequence(); // re-create led sequence
+      
+      _restartGameLedSequence();
       break;
 
     case mz::ButtonSequenceState::B_DESTROYED:
       // 2nd round of button sequence input
-      _initializeButtonSequence();
+      _initializeGameButtonSequence();
       break;
 
     default:
@@ -123,12 +144,12 @@ void _loopButtonSequence() {
 }
 
 
-void loop() {
+void _loopGameLedSequence() {
   auto ledSequenceState = mz::parseLedSequenceState();
 
   switch (ledSequenceState) {
     case mz::LedSequenceState::FRESH:
-      _initializeLedSequence();
+      _initializeGameLedSequence();
       break;
 
     case mz::LedSequenceState::INITIALIZED:
@@ -149,16 +170,25 @@ void loop() {
       break;
 
     case mz::LedSequenceState::DESTROYED:
-      _loopButtonSequence();
+      _loopGameButtonSequence();
       break;
     
     default:
       // do nothing...
       break;
   }
+}
+
+#define _LOOP_DELAY_TIME 50
+void loop() {
+  if (playingWrongInputMelody) {
+    playWrongInputMelody.update();
+  } else {
+    _loopGameLedSequence();
+  }
 
   melodyBuzzer.update();
-  delay(LOOP_DELAY_TIME);
+  delay(_LOOP_DELAY_TIME);
 }
 
 

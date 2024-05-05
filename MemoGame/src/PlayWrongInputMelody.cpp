@@ -42,7 +42,11 @@ sequenceEnded{false} {
     for (uint8_t i = 0 ; i < _PWIM_LED_NOTES_SIZE ; i++) this->ledPins[i] = ledPinsParam[i % ledPinsSize];
 }
 
-void mz::PlayWrongInputMelody::initialize() {
+void mz::PlayWrongInputMelody::initialize(void(*sequenceEndCallback)()) {
+    if (sequenceEndCallback != nullptr) {
+        this->sequenceEndCallback = sequenceEndCallback;
+    }
+
     initializeLedSequence(
         melodyBuzzer,
         ledPins,
@@ -52,10 +56,13 @@ void mz::PlayWrongInputMelody::initialize() {
         _PWIM_LED_NOTES_SIZE,
         _PWIM_DURATIONS
     );
+    
+    sequenceEnded = false;
 }
 
 void mz::PlayWrongInputMelody::setup() {
     setupLedSequence();
+    sequenceEnded = false;
 }
 
 void mz::PlayWrongInputMelody::update() {
@@ -78,8 +85,12 @@ void mz::PlayWrongInputMelody::update() {
     }
 }
 
-mz::PlayWrongInputMelody::~PlayWrongInputMelody() {
+void mz::PlayWrongInputMelody::destroy() {
     destroyLedSequence();
+}
+
+mz::PlayWrongInputMelody::~PlayWrongInputMelody() {
+    this->destroy();
     delete[] ledSequence;
     delete[] ledPins;
 }

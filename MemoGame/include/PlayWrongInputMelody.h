@@ -22,11 +22,13 @@ namespace mz {
                 void(*sequenceEndCallback)() = nullptr
             );
 
-            void initialize();
+            void initialize(void(*sequenceEndCallback)() = nullptr);
 
             void setup();
 
             void update();
+
+            void destroy();
 
             ~PlayWrongInputMelody();
         };
