@@ -14,8 +14,8 @@
 #define __ESP_LED_BUILTIN 2
 
 #ifndef STASSID
-#define STASSID "ZaraGalli"
-#define STAPSK "Zaragoza123*"
+#define STASSID "..."
+#define STAPSK "..."
 #endif
 
 const char* ssid = STASSID;
