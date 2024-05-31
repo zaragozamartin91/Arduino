@@ -9,14 +9,15 @@
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
 
-// According to the Arduino blink sketch... the true led builtin is pin #2
+
+// According to the Arduino blink sketch (and this blog https://www.best-microcontroller-projects.com/esp-01-vs-esp-01s.html)... 
+// the true led builtin is pin #2
 #define __ESP_LED_BUILTIN 2
 
-#ifndef STASSID
-#define STASSID "ZaraGalli"
-#define STAPSK "Zaragoza123*"
-#endif
+// wifi creds
+#include "__SSID__.h"
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
@@ -26,7 +27,9 @@ const char* password = STAPSK;
 WiFiServer server(80);
 
 /* On esp8266, low voltage on gpio2 turns the led on
-https://forum.arduino.cc/t/want-to-blink-blue-led-on-esp8266-01/486496/4 */
+https://forum.arduino.cc/t/want-to-blink-blue-led-on-esp8266-01/486496/4 
+Read more here: https://www.best-microcontroller-projects.com/esp-01-vs-esp-01s.html
+*/
 #define __ESP_LED_ON 0
 #define __ESP_LED_OFF 1
 int ledValue = __ESP_LED_OFF;
@@ -61,9 +64,14 @@ void setup() {
 
   // Print the IP address
   Serial.println(WiFi.localIP());
+
+
+  MDNS.begin("espled");
 }
 
 void loop() {
+  MDNS.update();  
+
   // Check if a client has connected
   WiFiClient client = server.accept();
   if (!client) { return; }
