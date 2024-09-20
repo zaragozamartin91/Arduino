@@ -10,6 +10,9 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#include "MyMacros.h"
+#include <string.h>
+#include <stdio.h>
 
 
 // According to the Arduino blink sketch (and this blog https://www.best-microcontroller-projects.com/esp-01-vs-esp-01s.html)... 
@@ -26,6 +29,7 @@ const char* password = STAPSK;
 // specify the port to listen on as an argument
 WiFiServer server(80);
 
+
 /* On esp8266, low voltage on gpio2 turns the led on
 https://forum.arduino.cc/t/want-to-blink-blue-led-on-esp8266-01/486496/4 
 Read more here: https://www.best-microcontroller-projects.com/esp-01-vs-esp-01s.html
@@ -35,7 +39,7 @@ Read more here: https://www.best-microcontroller-projects.com/esp-01-vs-esp-01s.
 int ledValue = __ESP_LED_OFF;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while(!Serial) {};
 
   // prepare LED
@@ -62,35 +66,51 @@ void setup() {
   server.begin();
   Serial.println(F("Server started"));
 
+
   // Print the IP address
-  Serial.println(WiFi.localIP());
+  Serial.print("Local ip: ");Serial.println(WiFi.localIP());
 
-
+  // More on MDNS: https://circuits4you.com/2017/12/31/esp8266-mdns/
   MDNS.begin("espled");
+  Serial.println("Local network address: espled.local");
 }
 
+#define __LOOP_DELAY 200
 void loop() {
-  MDNS.update();  
+  MDNS.update();
 
-  // Check if a client has connected
+  if (!server.hasClient()) {
+    // looping with delay to update MDNS server frequently
+    delay(__LOOP_DELAY);
+    return;
+  }
   WiFiClient client = server.accept();
-  if (!client) { return; }
 
-  Serial.println(F("new client"));
+  debugPrint(F("new client"));
   client.setTimeout(5000);  // default is 1000
 
-  // Read the first line of the request
-  String req = client.readStringUntil('\r');
-  Serial.println(F("request: "));
-  Serial.println(req);
+  String clientRequest;
+  for (int availableBytes = client.available() ; availableBytes > 0 ; availableBytes = client.available()) {
+    char buffer[availableBytes];
+    client.readBytes(buffer, availableBytes);
+    clientRequest.concat(buffer, availableBytes);
+  }
+
+  debugPrintArgs("Request: \n", clientRequest);
 
   // Match the request
-  if (req.indexOf(F("/gpio/0")) != -1) {
+  if (clientRequest.indexOf(F("/gpio/0")) != -1) {
     ledValue = __ESP_LED_OFF;
-  } else if (req.indexOf(F("/gpio/1")) != -1) {
+  } else if (clientRequest.indexOf(F("/gpio/1")) != -1) {
     ledValue = __ESP_LED_ON;
+  } else if (clientRequest.indexOf(F("/ledlight/")) != -1) {
+    int sidx = clientRequest.indexOf(F("/ledlight/"));
+    String ledlightRequest = clientRequest.substring(sidx);
+    ledlightRequest.replace("/ledlight/", "");
+    debugPrintArgs("ledlightRequest: ", ledlightRequest);
+    
   } else {
-    Serial.println(F("invalid request"));
+    debugPrint(F("invalid request"));
   }
 
   // Set LED according to the request
@@ -117,5 +137,5 @@ void loop() {
   // The client will actually be *flushed* then disconnected
   // when the function returns and 'client' object is destroyed (out-of-scope)
   // flush = ensure written data are received by the other side
-  Serial.println(F("Disconnecting from client"));
+  debugPrint(F("Disconnecting from client"));
 }
