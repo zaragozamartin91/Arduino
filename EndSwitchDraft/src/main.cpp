@@ -1024,6 +1024,7 @@ mz::DispenserInput pollSensors();
 
 void motorHalt();
 void motorStart();
+void motorMove();
 
 void lcdReset();
 void lcd2Lines(const char* line0, const char* line1);
@@ -1031,6 +1032,7 @@ void lcd2Lines(const char* line0, const char* line1);
 void dispenserStateIdleLoop();
 void dispenserStateForceMoveMotorLoop();
 void dispenserStateCountdown();
+void dispenserStateMoveUntilEndSwitchPressed();
 
 
 void setup() {
@@ -1068,6 +1070,9 @@ void loop() {
       break;
     case mz::DispenserState::DISPENSER_COUNTDOWN:
       dispenserStateCountdown();
+      break;
+    case mz::DispenserState::DISPENSER_MOVE_MOTOR_UNTIL_END_SWITCH_PRESSED:
+      dispenserStateMoveUntilEndSwitchPressed();
       break;
   };
 
@@ -1180,8 +1185,46 @@ void dispenserStateCountdown() {
     delay(__COUNTDOWN_PERIOD_MS__);
   }
 
-  dispenserState = mz::DispenserState::DISPENSER_IDLE;
+  dispenserState = mz::DispenserState::DISPENSER_MOVE_MOTOR_UNTIL_END_SWITCH_PRESSED;
   lcdReset();
+}
+
+void dispenserStateMoveUntilEndSwitchPressed() {
+  bool pushMotor = !dispenserInput.isEndSwitchPressed();
+  auto motorControlState = mz::parseMotorControlState(
+    pushMotor, 
+    motor.isMoving()
+  );
+
+  switch (motorControlState) {
+    case mz::MotorControlState::MOTOR_CONTROL_MOVING:
+      // keep on moving ; accelerator loop updates the motorSpeed variable
+      accelerator.loop();
+      motorMove();
+      break;
+    
+    case mz::MotorControlState::MOTOR_CONTROL_HALTING:
+      /* Maybe when halt signal is detected, we should delay the stopping for a jiffy */
+      /* This way the motor has enough time to move past the end switch press */
+      delay(__LOOP_DELAY_MS__ * 2);
+      motorHalt();
+      lcdReset();
+      dispenserState = mz::DispenserState::DISPENSER_IDLE;
+      break;
+
+    case mz::MotorControlState::MOTOR_CONTROL_STARTING:
+      // reset motor speed
+      motorSpeed = __MAX_MOTOR_SPEED_SWITCH_ON__;
+      accelerator.setup();
+      motorMove();
+      break;
+
+    default:
+      __PNTLN("Motor state is IDLE... end switch is still pressed");
+      lcdReset();
+      dispenserState = mz::DispenserState::DISPENSER_IDLE;
+      break;
+  }
 }
 
 mz::DispenserInput pollSensors() {
@@ -1217,12 +1260,16 @@ void motorHalt() {
 void motorStart() {
   // reset motor speed
   motorSpeed = dispenserInput.isEndSwitchPressed() 
-    ? __MAX_MOTOR_SPEED_SWITCH_ON__ 
-    : __MAX_MOTOR_SPEED_SWITCH_OFF__; 
+  ? __MAX_MOTOR_SPEED_SWITCH_ON__ 
+  : __MAX_MOTOR_SPEED_SWITCH_OFF__; 
   accelerator.setup();
   motor.backward();
 }
 
+void motorMove() {
+  motor.setSpeed(motorSpeed);
+  motor.backward();
+}
 
 
 #endif
