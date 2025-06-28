@@ -965,6 +965,8 @@ void startMotor() {
 #include "DispenserState.h"
 #include "DispenserInput.h"
 #include "MotorButtonValue.h"
+#include "MelodyBuzzer.h"
+#include "music_notes.h" // including the library with the frequencies of the note 
 
 #define __LOOP_DELAY_MS__ 5
 
@@ -976,7 +978,7 @@ void startMotor() {
 #define __MOTOR_INI2_PIN__ 5
 
 #define __MAX_MOTOR_SPEED_SWITCH_OFF__ 150 // initial motor speed when end switch is NOT pressed
-#define __MAX_MOTOR_SPEED_SWITCH_ON__ 220 // initial motor speed when end switch IS pressed
+#define __MAX_MOTOR_SPEED_SWITCH_ON__ 200 // initial motor speed when end switch IS pressed
 #define __MIN_MOTOR_SPEED__ 80
 #define __ACCELERATION__ 5
 void deccelerate();
@@ -1001,6 +1003,7 @@ mz::Stepper accelerator(&millis, &deccelerate, 25L, UINT_MAX);
 #define __CONTROL_MOTOR_PIN__ A4
 #define __LED_THRESHOLD__ 50
 #define __MOTOR_BUTTON_LONG_PRESS_THRESHOLD_MS__ 1000L
+#define __BUZZER_PIN__ 2
 
 
 /* <GLOBAL_STATE> ================================================================================ */
@@ -1017,6 +1020,8 @@ mz::DispenserInput dispenserInput(
   false, // endSwitchPressed
   false  // motorControlButtonPressed
 );
+
+mz::MelodyBuzzer melodyBuzzer(__BUZZER_PIN__, &tone, &noTone, &millis);
 
 /* </GLOBAL_STATE> ================================================================================ */
 
@@ -1143,29 +1148,21 @@ void dispenserStateForceMoveMotorLoop() {
 
   switch (motorControlState) {
     case mz::MotorControlState::MOTOR_CONTROL_MOVING:
-      // keep on moving
       accelerator.loop();
-      motor.setSpeed(motorSpeed);
-      motor.backward();
+      motorMove();
       break;
     
     case mz::MotorControlState::MOTOR_CONTROL_HALTING:
-      // halt
-      motor.setSpeed(0);
-      motor.stop();
-      motorSpeed = 0;
+      motorHalt();
       // Back to being idle
       dispenserState = mz::DispenserState::DISPENSER_IDLE;
       break;
 
     case mz::MotorControlState::MOTOR_CONTROL_STARTING:
-      // start moving
-
       // reset motor speed
       motorSpeed = __MAX_MOTOR_SPEED_SWITCH_ON__;
-      motor.setSpeed(motorSpeed);
       accelerator.setup();
-      motor.backward();
+      motorMove();
       break;
 
     default:
@@ -1174,15 +1171,22 @@ void dispenserStateForceMoveMotorLoop() {
   }  
 }
 
-#define __COUNTDOWN_ITERATIONS__ 5
+#define __COUNTDOWN_ITERATIONS__ 3
 #define __COUNTDOWN_PERIOD_MS__ 1000L
+#define __COUNTDOWN_BUZZ_DURATION__ 800L
+#define __COUNTDOWN_AFTER_BUZZ_DELAY_MS__ __COUNTDOWN_PERIOD_MS__ - __COUNTDOWN_BUZZ_DURATION__
 void dispenserStateCountdown() {
   lcdReset();
 
-  for (int i = __COUNTDOWN_ITERATIONS__; i > 0; --i) {
+  for (int i = __COUNTDOWN_ITERATIONS__; i > 0; --i) { 
     char buffer[16]; sprintf(buffer, "%d seconds", i);
     lcd2Lines(buffer, "remaining...");
-    delay(__COUNTDOWN_PERIOD_MS__);
+
+    melodyBuzzer.playAsync(NOTE_C4, __COUNTDOWN_BUZZ_DURATION__);
+    delay(__COUNTDOWN_BUZZ_DURATION__);
+    melodyBuzzer.update();
+    delay(__COUNTDOWN_AFTER_BUZZ_DELAY_MS__);
+    melodyBuzzer.update();
   }
 
   dispenserState = mz::DispenserState::DISPENSER_MOVE_MOTOR_UNTIL_END_SWITCH_PRESSED;
